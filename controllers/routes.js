@@ -61,7 +61,66 @@ router.get("/:id", (req, res) => {
     }
     
 })
-// TODO: PUT api/update/:id -> edit one beer
-// TODO: DELETE api/delete/:id -> delete one beer
+
+router.put("/update/:id", (req, res) => {
+    try {
+        // Destructure beer id from the param
+        const { id } = req.params
+        // Read the database
+        const db = read(dbPath)
+        // Find index at which the entry exists within the db
+        const found = db.findIndex(beer => beer.id === id)
+        
+        // Error handling if findIndex doesn't find anything (returns -1)
+        if (found === -1) throw Error(`${id} not found`)
+        
+        // Reassign the values of properties inside db at found index
+        // ! IF the replacement values exist in the body
+        // If their value is falsey, keep existind db values
+        db[found].brand = req.body.brand ?? db[found].brand
+        db[found].brewery = req.body.brewery ?? db[found].brewery
+        db[found].abv = req.body.abv ?? db[found].abv
+        db[found].country = req.body.country ?? db[found].country
+        db[found].style = req.body.style ?? db[found].style
+        db[found].size = req.body.size ?? db[found].size
+
+        // Save to db
+        save(db, dbPath)
+        
+        res.status(200).json({
+            message: `Updated data at index of ${found}`,
+            data: db[found]
+        })
+    } catch(err) {
+        console.log(err)
+        res.status(500).json({
+            message: `${err}`
+        })
+    }
+
+})
+
+router.delete("/delete/:id", (req, res) => {
+    try {
+        console.log("route hit")
+        const { id } = req.params
+        const db = read(dbPath)
+        const updatedDb = db.filter(beer => beer.id !== id)
+
+        if (db.length === updatedDb.length) throw Error(`${id} not found`)
+
+        save(updatedDb, dbPath)
+
+        res.status(200).json({
+            message: `Database updated`
+        })
+
+    } catch(err) {
+        console.log(err)
+        res.status(500).json({
+            message: `${err}`
+        })
+    }
+})
 
 module.exports = router
