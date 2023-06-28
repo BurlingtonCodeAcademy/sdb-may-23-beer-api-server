@@ -1,6 +1,7 @@
 require("dotenv").config()
 const express = require("express")
 const cors = require("cors")
+const { dbConnect } = require("./db")
 const app = express()
 
 const PORT = process.env.PORT || 4000
@@ -16,6 +17,7 @@ app.use("/auth", authController)
 app.use("/api", beerController)
 
 app.listen(PORT, HOST, () => {
+    dbConnect()
     console.log(`[server] listening on ${HOST}:${PORT}`)
 })
 
