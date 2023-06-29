@@ -3,16 +3,12 @@ const Beer = require("../models/Beer")
 
 router.post("/create", async (req, res) => {
     try {
-
         const newBeer = new Beer(req.body)
-
-        const saver = await newBeer.save()
-
+        await newBeer.save()
         res.status(201).json({
             message: `Beer created`,
             newBeer
         })
-
     } catch(err) {
         console.log(err)
         err.name === "ValidationError"
@@ -25,9 +21,12 @@ router.post("/create", async (req, res) => {
     }
 })
 
-router.get("/", (_, res) => {
+router.get("/", async (req, res) => {
     try {
-        
+        console.log(req.user)
+        const findAll = await Beer.find({})
+        if (findAll.length === 0) throw Error("No entries found")
+        res.status(200).json(findAll)
     } catch(err) {
         console.log(err)
         res.status(500).json({
@@ -36,9 +35,16 @@ router.get("/", (_, res) => {
     }
 })
 
-router.get("/:id", (req, res) => {
+router.get("/:id", async (req, res) => {
     try {
-        
+        /* 
+            This is an example of an alias within destructure assignment
+            Allows us to "rename" id to match _id key within db
+        */
+        const { id: _id } = req.params
+        const findOne = await Beer.findOne({ _id })
+        if (!findOne) throw Error("No item found")
+        res.status(200).json(findOne)
     } catch (err) {
         console.log(err.message)
         res.status(500).json({
@@ -48,9 +54,16 @@ router.get("/:id", (req, res) => {
     
 })
 
-router.put("/update/:id", (req, res) => {
+router.put("/update/:id", async (req, res) => {
     try {
-
+        const { id: _id } = req.params
+        const newBeer = req.body
+        const updatedOne = await Beer.updateOne({_id}, { $set: newBeer })
+        if (updatedOne.matchedCount === 0) throw Error("ID not found")
+        res.status(200).json({
+            message: `Entry updated`,
+            updatedOne
+        })
     } catch(err) {
         console.log(err)
         res.status(500).json({
@@ -60,9 +73,15 @@ router.put("/update/:id", (req, res) => {
 
 })
 
-router.delete("/delete/:id", (req, res) => {
+router.delete("/delete/:id", async (req, res) => {
     try {
-
+        const { id: _id } = req.params
+        const deleteOne = await Beer.findByIdAndDelete({ _id })
+        if (!deleteOne) throw Error("ID not found")
+        res.status(200).json({
+            message: `Item deleted`,
+            deleteOne
+        })
     } catch(err) {
         console.log(err)
         res.status(500).json({
